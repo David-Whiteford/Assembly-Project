@@ -1,0 +1,1518 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 15-04-2018 21:15:13
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :ZorkQuest Battle for Themaron
+00000000                             3  * Written by : David Whiteford
+00000000                             4  * Date       : 8/4/18
+00000000                             5  * Description: text game with castle attack missions and resourse management. mission is to take the two castles.
+00000000                             6  *-----------------------------------------------------------
+00001000                             7      ORG    $1000
+00001000                             8  START:                  ; first instruction of program
+00001000                             9  
+00001000                            10    org $1000
+00001000                            11  
+00001000                            12  *-------------------------------------------------------
+00001000                            13  *-------------------------------------------------------
+00001000                            14  
+00001000                            15  *-------------------------------------------------------
+00001000                            16  *Validation values to be used, modify as needed
+00001000                            17  *Add additional validation values as required
+00001000                            18  *-------------------------------------------------------
+00001000  =00000000                 19  exit        EQU 0      used to exit assembly program
+00001000  =00000064                 20  min_feed    EQU 100    min feed requirement
+00001000  =00000001                 21  min_horses  EQU 1      min number of horses
+00001000  =00000009                 22  max_horses  EQU 9      max number of horses
+00001000  =00000006                 23  min_soldier EQU 6      min soldiers
+00001000  =00000001                 24  min_charge  EQU 1      min rate of fuel use based of speed (oats for horses)
+00001000  =00000005                 25  max_charge  EQU 5      max rate e.g. Flank       
+00001000  =00000005                 26  hit_point   EQU 5      points accumilated on castle (objective) strike
+00001000  =00000008                 27  miss_point  EQU 8      points deducted for ordinace miss
+00001000                            28  
+00001000  =00000064                 29  mine_loc    EQU 100    example for a hit
+00001000                            30  
+00001000                            31  
+00001000                            32  *Start of Game
+00001000                            33  start:
+00001000  11FC 0064 4000            34      move.b  #100,$4000 put score/health in memory location $4000
+00001006  47F8 4000                 35      lea     $4000,A3   assign address A3 to that memory location
+0000100A                            36  
+0000100A                            37  
+0000100A  6100 1FFE                 38      bsr     welcome    branch to the welcome subroutine
+0000100E  6100 1FF0                 39      bsr     game       branch to the game subroutine
+00001012                            40  *Game loop
+00003000                            41      org     $3000     the rest of the program is to be located from 3000 onwards
+00003000                            42  
+00003000                            43  *-------------------------------------------------------
+00003000                            44  *-------------------Game Subroutine---------------------
+00003000                            45  *-------------------------------------------------------
+00003000                            46  game:
+00003000  6100 008E                 47      bsr     gameloop   branch to gameloop subroutine
+00003004  4E75                      48      rts                return from game: subroutine
+00003006                            49            
+00003006                            50  end:
+00003006  FFFF FFFF                 51      simhalt
+0000300A                            52  
+0000300A                            53  *-------------------------------------------------------
+0000300A                            54  *-------------------Welcome Subroutine------------------
+0000300A                            55  *-------------------------------------------------------
+0000300A                            56  welcome:
+0000300A                            57  
+0000300A  23FC 000000C8 00015000    58      move.l #200 , $15000              stores feed cost in memory 5000
+00003014  23FC 000007D0 00016000    59      move.l #2000 , $16000             stores feed in memory 6000
+0000301E  13FC 0006 00017000        60      move.b #6 , $17000                stores horses in 7000
+00003026  13FC 0008 00018000        61      move.b #8 , $18000                stores soliders in 8000
+0000302E  23FC 000005DC 00010000    62      move.l #1500, $10000             stores gold in 10000
+00003038  23FC 00000064 00012000    63      move.l #100 , $12000             stores solider cost in 12000
+00003042                            64     
+00003042  43F9 0000546E             65      lea     welcome_msg,A1         assign message to address register A1
+00003048  103C 000E                 66      move.b  #14,D0                 move literal 14 to DO
+0000304C  4E4F                      67      trap    #15                    interpt val in Do
+0000304E  223C 00000096             68      move.l   #150,D1               store 150 in D0 
+00003054  103C 0017                 69      move.b   #23,D0                trap 23 
+00003058  4E4F                      70      trap   #15
+0000305A  43F9 000047B9             71      lea     start_msg,A1           assign message to address register A1
+00003060  103C 000E                 72      move.b  #14,D0                 move literal 14 to DO
+00003064  4E4F                      73      trap    #15                    interpt val in Do
+00003066  223C 00000096             74      move.l   #150,D1               move 150 to d1
+0000306C  103C 0017                 75      move.b   #23,D0                trap 23  timer
+00003070  4E4F                      76      trap   #15                     trap 15 
+00003072  43F9 00005314             77      lea    intro_msg , A1          assign message to address register A1
+00003078  103C 000E                 78      move.b #14 , D0          trap 14 output msg
+0000307C  4E4F                      79      trap #15                 trap 15 interpt D0
+0000307E  223C 00000096             80      move.l #150,D1     
+00003084  103C 0017                 81      move.b #23,D0               trap 23 
+00003088  4E4F                      82      trap   #15 
+0000308A                            83  
+0000308A  6000 01BC                 84      bra mission1_prep         branch to mission 1 prep
+0000308E                            85  
+0000308E                            86  
+0000308E                            87                
+0000308E                            88  
+0000308E                            89  utine
+0000308E  4E75                      90      rts                     return from welcome: subroutine
+00003090                            91  
+00003090                            92  *-------------------------------------------------------
+00003090                            93  *---------Gameplay Input Values Subroutine--------------
+00003090                            94  *-------------------------------------------------------    
+00003090                            95  
+00003090                            96  
+00003090                            97  *-------------------------------------------------------
+00003090                            98  *----------------Gameloop (main loop)-------------------
+00003090                            99  *------------------------------------------------------- 
+00003090                           100  gameloop:
+00003090  6100 02A6                101      bsr     update          branch to update game subroutine 
+00003094  6100 090E                102      bsr     clear_screen    clears the screen         
+00003098  6100 02B8                103      bsr     draw            branch to draw screen subroutine
+0000309C  6100 0906                104      bsr     clear_screen    clears the screen
+000030A0  6100 085C                105      bsr     gameplay        branch to gameplay subroutine
+000030A4  6100 08FE                106      bsr     clear_screen    clears the screen
+000030A8  6100 089C                107      bsr     hud             branch to display HUD subroutine
+000030AC  6100 08F6                108      bsr     clear_screen    clears the screen
+000030B0  6100 08FE                109      bsr     replay          branch to replay game subroutine
+000030B4  6100 08EE                110      bsr     clear_screen    clears the screen
+000030B8  4E75                     111      rts                     return from gameloop: subroutine
+000030BA                           112      
+000030BA                           113  *-------------------------------------------------------
+000030BA                           114  *----------------shop and info------------------
+000030BA                           115  *------------------------------------------------------- 
+000030BA                           116  Shop_and_info:
+000030BA                           117  
+000030BA                           118  
+000030BA                           119      
+000030BA  43F9 00004032            120      lea shop_msg ,A1     stores shop message A1
+000030C0  103C 000E                121      move.b #14 , D0      store 14 D0 
+000030C4  4E4F                     122      trap #15             interpet D0
+000030C6  103C 0004                123      move.b #4 ,D0        trap 4 for user input
+000030CA  4E4F                     124      trap #15             trap 15 interpt D0
+000030CC  B27C 0001                125      cmp #1 , D1          compare 1 to d1       
+000030D0  6700 004C                126      beq feed_amount       branch if equal
+000030D4  B27C 0002                127      cmp #2 , D1          compare 2 to d1
+000030D8  6700 0088                128      beq horses_amount    branch if equal
+000030DC  B27C 0003                129      cmp #3 , D1          compare 3 to d1
+000030E0  6700 005E                130      beq soliders_amount   branch if equal
+000030E4  B27C 0004                131      cmp #4 , D1          compare 4 to d1
+000030E8  6700 0002                132      beq buy_stuff         branch if equal
+000030EC                           133  *-------------------------------------------------------
+000030EC                           134  *----------------buy stuff ------------------
+000030EC                           135  *-------------------------------------------------------    
+000030EC                           136  
+000030EC                           137   buy_stuff:
+000030EC  43F9 00003DAD            138      lea buy_suff_msg , A1     assign message to address register A1
+000030F2  303C 000E                139      move #14 , D0             trap 14 output msg
+000030F6  4E4F                     140      trap #15                    
+000030F8  103C 0004                141      move.b #4 ,D0        trap 4 for user input
+000030FC  4E4F                     142      trap #15             trap 15 interpt D0
+000030FE  B27C 0001                143      cmp #1 , D1          compare 1 to d1 
+00003102  6700 0080                144      beq buy_feed          branch if equal
+00003106  B27C 0002                145      cmp #2 , D1          compare 1 to d1   
+0000310A  6700 00FC                146      beq buy_horses       branch if equal
+0000310E  B27C 0003                147      cmp #3 , D1          compare 1 to d1 
+00003112  6700 00B4                148      beq buy_soliders     branch if equal
+00003116  B27C 0004                149      cmp #4 , D1         compare 1 to d1 
+0000311A  6700 012C                150      beq mission1_prep    branch if equal
+0000311E                           151  *-------------------------------------------------------
+0000311E                           152  *----------------feed amount------------------
+0000311E                           153  *------------------------------------------------------- 
+0000311E                           154  feed_amount:    
+0000311E                           155  
+0000311E  2239 00016000            156      move.l $16000 , D1
+00003124  43F9 0000499B            157      lea feed_amount_msg , A1          assign message to address register A1
+0000312A  303C 0011                158      move #17 , D0                     trap 17 outputs val in d0
+0000312E  4E4F                     159      trap #15                         trap 15 interpt D0
+00003130  223C 00000096            160      move.l   #150,D1     
+00003136  103C 0017                161      move.b   #23,D0                  trap 23 timer
+0000313A  4E4F                     162      trap #15             trap 15 interpt D0
+0000313C  6000 FF7C                163      bra Shop_and_info      branch shop and info
+00003140                           164   *-------------------------------------------------------
+00003140                           165  *----------------soliders amount------------------
+00003140                           166  *------------------------------------------------------- 
+00003140                           167  soliders_amount:
+00003140                           168  
+00003140                           169  
+00003140                           170  
+00003140  1239 00018000            171      move.b $18000 , D1
+00003146  43F9 00003E8C            172      lea soliders_amount_msg , A1  assign message to address register A1
+0000314C  303C 0011                173      move #17 , D0        trap 17 output val d0
+00003150  4E4F                     174      trap #15             trap 15 interpt D0
+00003152  223C 00000096            175      move.l   #150,D1     timer is 50 
+00003158  103C 0017                176      move.b   #23,D0      trap 23 for timer
+0000315C  4E4F                     177      trap #15             trap 15 interpt D0
+0000315E                           178  
+0000315E  6000 FF5A                179      bra Shop_and_info     branch shop and info
+00003162                           180  *-------------------------------------------------------
+00003162                           181  *----------------horses amount------------------
+00003162                           182  *------------------------------------------------------- 
+00003162                           183  horses_amount:
+00003162                           184  
+00003162  1239 00017000            185      move.b $17000 , D1
+00003168  43F9 00003D0C            186      lea horses_amount_msg , A1       assign message to address register A1
+0000316E  303C 0011                187      move #17 , D0
+00003172  4E4F                     188      trap #15             trap 15 interpt D0
+00003174  223C 00000096            189      move.l   #150,D1      150 timer
+0000317A  103C 0017                190      move.b   #23,D0       trap 23 in d0
+0000317E  4E4F                     191      trap #15             trap 15 interpt D0
+00003180  6000 FF38                192      bra Shop_and_info     branch shop and info
+00003184                           193  *-------------------------------------------------------
+00003184                           194  *----------------Buy feed------------------
+00003184                           195  *-------------------------------------------------------     
+00003184                           196  buy_feed:
+00003184                           197            
+00003184  43F9 00003B27            198      lea Buy_feed_msg , A1  assign message to address register A1
+0000318A  103C 000E                199      move.b #14 , D0          trap 14 output ms
+0000318E  4E4F                     200      trap #15
+00003190  223C 00000096            201      move.l   #150,D1               store 150 in D0 
+00003196  103C 0017                202      move.b   #23,D0                trap 23 
+0000319A  4E4F                     203      trap   #15                 trap 15 interpt D0  
+0000319C  2239 00016000            204      move.l $16000 , D1         move memory 6000 to d1
+000031A2  263C 000000C8            205      move.l #200 , D3          move 200 to d3
+000031A8  D641                     206      add D1 , D3              add d1 to d3
+000031AA  23C3 00016000            207      move.l  D3 , $16000       move d3 memory  6000
+000031B0  2239 00010000            208      move.l $10000 , D1       move memory 10000 to d1
+000031B6  263C 000000C8            209      move.l #200 , D3         move 200 to d3
+000031BC  9641                     210      sub D1 , D3              sub d1 from d3
+000031BE  23C3 00010000            211      move.l  D3 , $10000      move d3 to memory  10000
+000031C4  6000 FEF4                212      bra Shop_and_info        branch shop and info
+000031C8                           213  *-------------------------------------------------------
+000031C8                           214  *----------------Buy soliders------------------
+000031C8                           215  *------------------------------------------------------- 
+000031C8                           216  buy_soliders:
+000031C8                           217  
+000031C8  43F9 00003C69            218      lea Buy_soliders_msg , A1    assign message to address register A1
+000031CE  103C 000E                219      move.b #14 , D0          trap 14 output msg
+000031D2  4E4F                     220      trap #15  
+000031D4  223C 00000096            221      move.l   #150,D1               store 150 in D0 
+000031DA  103C 0017                222      move.b   #23,D0                trap 23 
+000031DE  4E4F                     223      trap   #15               trap 15 interpt D0  
+000031E0  1239 00018000            224      move.b $18000 , D1        move memory 8000 to d1
+000031E6  7602                     225      move.l #2 , D3           move 2 to d3
+000031E8  D641                     226      add D1 , D3              add d1 to d3
+000031EA  23C3 00018000            227      move.l  D3 , $18000       move d3 to memory 8000
+000031F0  2239 00010000            228      move.l $10000 , D1       move memory 10000 to d1
+000031F6  263C 00000190            229      move.l #400 , D3         move 400 into d3
+000031FC  9641                     230      sub D1 , D3              sub d1 from d3   
+000031FE  23C3 00010000            231      move.l  D3 , $10000      move d3 to memory  10000
+00003204  6000 FEB4                232      bra Shop_and_info        branch shop and info
+00003208                           233      
+00003208                           234  *-------------------------------------------------------
+00003208                           235  *----------------Buy horses------------------
+00003208                           236  *------------------------------------------------------- 
+00003208                           237  buy_horses: 
+00003208                           238  
+00003208  43F9 00003BC8            239      lea Buy_horses_msg , A1     assign message to address register A1
+0000320E  103C 000E                240      move.b #14 , D0          trap 14 output msg
+00003212  4E4F                     241      trap #15   
+00003214  223C 00000096            242      move.l   #150,D1               store 150 in D0 
+0000321A  103C 0017                243      move.b   #23,D0                trap 23 
+0000321E  4E4F                     244      trap   #15              trap 15 interpt D0 
+00003220  1239 00017000            245      move.b $17000 , D1         move memory 7000 to d1
+00003226  7602                     246      move.l #2 , D3           move 2 d3
+00003228  D641                     247      add D1 , D3             add d1 to d3
+0000322A  23C3 00017000            248      move.l  D3 , $17000       move d3 to 7000
+00003230  2239 00010000            249      move.l $10000 , D1       move memory 10000 to d1
+00003236  263C 0000012C            250      move.l #300 , D3         move 300 to d3
+0000323C  9641                     251      sub D1 , D3              sub d1 from d3
+0000323E  23C3 00010000            252      move.l  D3 , $10000      move d3 to memory 10000
+00003244  6000 FE74                253      bra Shop_and_info        branch shop and info
+00003248                           254  *-------------------------------------------------------
+00003248                           255  *----------------mission 1 preperation------------------
+00003248                           256  *------------------------------------------------------- 
+00003248                           257  mission1_prep:
+00003248                           258  
+00003248  43F9 00004FB3            259      lea     Algard_Castle_msg , A1    assign message to address register A1
+0000324E  103C 000E                260      move.b  #14,D0                    move literal 14 to DO
+00003252  4E4F                     261      trap #15             trap 15 interpt D0
+00003254  103C 0004                262      move.b #4 ,D0        trap 4 for user input
+00003258  4E4F                     263      trap #15             trap 15 interpt D0
+0000325A  B27C 0001                264      cmp #1 , D1          compare 1 to d1         
+0000325E  6700 010C                265      beq  feed             branch fees
+00003262  B27C 0002                266      cmp #2 , D1           compare 2 to d1   
+00003266  6700 034C                267      beq horses             branch horses 
+0000326A  B27C 0003                268      cmp #3 , D1           compare 3 to d1   
+0000326E  6700 052A                269      beq  soldiers         branch to soliders
+00003272  B27C 0004                270      cmp #4 , D1           compare 4 to d1   
+00003276  6700 0232                271      beq goodwait          branch goodwait
+0000327A  B27C 0005                272      cmp #5 , D1           compare 5 to d1   
+0000327E  6700 0276                273      beq badwait           branch goodwait
+00003282  B27C 0006                274      cmp #6 , D1           compare 5 to d1
+00003286  6700 FE32                275      beq Shop_and_info     branch goodwait
+0000328A                           276     
+0000328A                           277  
+0000328A                           278  *-------------------------------------------------------
+0000328A                           279  *----------------Invalid selection msg------------------
+0000328A                           280  *-------------------------------------------------------  
+0000328A                           281  invalid_selection:
+0000328A                           282          
+0000328A  43F9 00003A84            283          lea invalid_msg ,A1        assign message to address register A1
+00003290  103C 000E                284          move.b #14 , D0          trap 14 output msg
+00003294  4E4F                     285          trap #15                 trap 15 interpt D0
+00003296  223C 00000096            286          move.l #150,D1     
+0000329C  103C 0017                287          move.b #23,D0        trap 23 for timer
+000032A0  4E4F                     288          trap #15             trap 15 interpt D0
+000032A2                           289          
+000032A2  4EF8 3248                290          jmp mission1_prep
+000032A6                           291  *-------------------------------------------------------
+000032A6                           292  *----------------mission 2 preperation------------------
+000032A6                           293  *------------------------------------------------------- 
+000032A6                           294     
+000032A6                           295  mission2_prep:
+000032A6                           296  
+000032A6  43F9 00005166            297      lea     Garth_Castle_msg , A1    assign message to address register A1
+000032AC  103C 000E                298      move.b #14 , D0          trap 14 output msg
+000032B0  4E4F                     299      trap #15                 trap 15 interpt D0                    
+000032B2  23FC 000001F4 00015000   300      move.l #500 , $15000               new cost values for gold and feed stores in 5000 and 12000
+000032BC  23FC 00000190 00012000   301      move.l #400 , $12000
+000032C6  103C 0004                302      move.b #4 ,D0        trap 4 for user input
+000032CA  4E4F                     303      trap #15             trap 15 interpt D0
+000032CC  B27C 0001                304      cmp #1 , D1          compare 1 to d1 
+000032D0  6700 0136                305      beq  feed_mission2
+000032D4  13FC 0006 00017000       306      move.b #6,$17000                  stores horses in 7000
+000032DC  B27C 0002                307      cmp #2 , D1
+000032E0  6700 0306                308      beq horses_mission2
+000032E4  13FC 0008 00018000       309      move.b #8 , $18000              stores number of soliders 8000
+000032EC  B27C 0003                310      cmp #3 , D1
+000032F0  6700 055C                311      beq  soldiers_mission2
+000032F4  B27C 0004                312      cmp #4 , D1                  user input and comparison with 4 
+000032F8  6700 0234                313      beq goodwait2
+000032FC  B27C 0005                314      cmp #5 , D1
+00003300  6700 0278                315      beq badwait2
+00003304                           316  *-------------------------------------------------------
+00003304                           317  *----------------mission 1-----------------------------
+00003304                           318  *outputs battle message and brances to mission 1 cost and award
+00003304                           319  *------------------------------------------------------- 
+00003304                           320  mission1:
+00003304                           321  
+00003304  43F9 00004DF2            322      lea battle_msg ,A1 assign message to address register A1
+0000330A  103C 000E                323      move.b #14 , D0          trap 14 output msg
+0000330E  4E4F                     324      trap #15                 trap 15 interpt D0
+00003310  103C 0004                325      move.b #4 ,D0        trap 4 for user input
+00003314  4E4F                     326      trap #15             trap 15 interpt D0
+00003316  B27C 0001                327      cmp #1 , D1          compare 1 to d1 
+0000331A  6700 0312                328      beq mission1_Cost_Awards
+0000331E                           329      
+0000331E                           330  *-------------------------------------------------------
+0000331E                           331  *----------------mission 2-----------------------------
+0000331E                           332  *outputs battle message and brances to mission 2 cost and award
+0000331E                           333  *------------------------------------------------------- 
+0000331E                           334  mission2:
+0000331E                           335  
+0000331E  43F9 00004ED3            336     lea battle_msg2 , A1
+00003324  103C 000E                337     move.b #14 , D0          trap 14 output msg
+00003328  4E4F                     338     trap #15                 trap 15 interpt D0
+0000332A                           339  
+0000332A  103C 0004                340      move.b #4 ,D0        trap 4 for user input
+0000332E  4E4F                     341      trap #15             trap 15 interpt D0
+00003330  B27C 0001                342      cmp #1 , D1          compare 1 to d1 
+00003334  6700 0358                343      beq mission2_Cost_Awards
+00003338                           344     
+00003338                           345  *-------------------------------------------------------
+00003338                           346  *---------------Update Mission Progress-----------------
+00003338                           347  *  Move to battle location, engage enemy, fire and take
+00003338                           348  *  fire, complete mission and return to base
+00003338                           349  *------------------------------------------------------- 
+00003338                           350  update:
+00003338  6100 0694                351      bsr     endl            print a CR and LF
+0000333C  6100 064E                352      bsr     decorate        decorate with dots using a loop
+00003340                           353  
+00003340  43F9 00004DF2            354      lea     battle_msg , A1       
+00003346  103C 000E                355      move.b #14 , D0          trap 14 output msg
+0000334A  4E4F                     356      trap #15                 trap 15 interpt D0
+0000334C  6100 063E                357      bsr     decorate
+00003350  4E75                     358      rts
+00003352                           359  *-------------------------------------------------------
+00003352                           360  *---------------Draw Mission Updates--------------------
+00003352                           361  * Draw the game progress information, status regarding
+00003352                           362  * mission
+00003352                           363  *------------------------------------------------------- 
+00003352                           364  draw:
+00003352  6100 067A                365      bsr     endl
+00003356  6100 0634                366      bsr     decorate
+0000335A  43F9 000056C9            367      lea     draw_msg,A1
+00003360  103C 000E                368      move.b #14 , D0          trap 14 output msg
+00003364  4E4F                     369      trap #15                 trap 15 interpt D0
+00003366  6100 0624                370      bsr     decorate
+0000336A  4E75                     371      rts
+0000336C                           372  *-------------------------------------------------------
+0000336C                           373  *-----------------------Horse feed-----------------------
+0000336C                           374  * Multiplies feed by no of horses to determine feed cost
+0000336C                           375  *------------------------------------------------------- 
+0000336C                           376  feed:
+0000336C                           377    
+0000336C  2239 00016000            378       move.l $16000 , D1
+00003372                           379    
+00003372  43F9 0000499B            380      lea     feed_amount_msg , A1 assign message to address register A1
+00003378  303C 0011                381      move #17 , D0                     trap 17 outputs val in d0
+0000337C  4E4F                     382      trap #15                 trap 15 interpt D0
+0000337E                           383      
+0000337E  223C 00000096            384      move.l   #150,D1     
+00003384  103C 0017                385      move.b   #23,D0                  trap 23 timer
+00003388  4E4F                     386      trap #15
+0000338A                           387   
+0000338A  103C 0004                388      move.b #4 ,D0        trap 4 for user input
+0000338E  4E4F                     389      trap #15             trap 15 interpt D0
+00003390  B27C 0001                390      cmp #1 , D1          compare 1 to d1 
+00003394                           391  
+00003394  1239 00017000            392      move.b $17000 , D1    move memory 7000 to d1
+0000339A  2439 00016000            393      move.l $16000, D2     move memory 6000 to d2
+000033A0  2639 00015000            394      move.l $15000 , D3    move memory 5000 to d3
+000033A6  C6C1                     395      mulu D1 , D3         mul d1 by d3
+000033A8  23C3 00019000            396      move.l D3 , $19000    move d3 to memory 9000
+000033AE  B642                     397      cmp D2 , D3          compare d2 nd d3
+000033B0  6D00 0022                398      blt     plenty_feed  branch if less than
+000033B4  B642                     399      cmp D2 , D3          compare d2 nd d3
+000033B6  6E00 0002                400      bgt not_enough_feed  branch if greather than
+000033BA                           401  *-------------------------------------------------------
+000033BA                           402  *------------not enough feed --------------------
+000033BA                           403  * checks if there is not enough feed
+000033BA                           404  *-------------------------------------------------------    
+000033BA                           405      
+000033BA                           406  not_enough_feed:
+000033BA                           407  
+000033BA  43F9 00003F2F            408          lea low_feed  ,A1    assign message to address register A1
+000033C0  103C 000E                409          move.b #14 , D0          trap 14 output msg
+000033C4  4E4F                     410          trap #15                 trap 15 interpt D0
+000033C6  103C 0004                411          move.b #4 ,D0        trap 4 for user input
+000033CA  4E4F                     412          trap #15             trap 15 interpt D0
+000033CC  B27C 0001                413          cmp #1 , D1          compare 1 to d1 
+000033D0  6700 FE76                414          beq  mission1_prep
+000033D4                           415  *-------------------------------------------------------
+000033D4                           416  *------------enough feed --------------------
+000033D4                           417  *checks if there is enough feed
+000033D4                           418  *-------------------------------------------------------           
+000033D4                           419          
+000033D4                           420          
+000033D4                           421  plenty_feed:  
+000033D4                           422  
+000033D4                           423     
+000033D4  43F9 00004328            424          lea enough_feed  ,A1     assign message to address register A1
+000033DA  103C 000E                425          move.b #14 , D0          trap 14 output msg
+000033DE  4E4F                     426          trap #15                 trap 15 interpt D0
+000033E0  223C 00000096            427          move.l   #150,D1               store 150 in D0 
+000033E6  103C 0017                428          move.b   #23,D0                trap 23 
+000033EA  4E4F                     429          trap   #15                     trap 15 interpt D0 
+000033EC  43F9 00004420            430          lea info_feed  , A1     assign message to address register A1
+000033F2  103C 0004                431          move.b #4 ,D0        trap 4 for user input
+000033F6  4E4F                     432          trap #15             trap 15 interpt D0 
+000033F8  B27C 0001                433          cmp #1 , D1          compare 1 to d1 
+000033FC  6700 02F0                434          beq  journey  
+00003400  B27C 0002                435          cmp #2 , D1         compare 2 to d1 
+00003404  6700 FE42                436          beq mission1_prep
+00003408                           437  
+00003408                           438  *-------------------------------------------------------
+00003408                           439  *-----------------------Horse feed 2--------------------
+00003408                           440  * Multiplies feed by no of horses
+00003408                           441  *------------------------------------------------------- 
+00003408                           442  
+00003408                           443   feed_mission2:
+00003408                           444    
+00003408  2239 00016000            445      move.l $16000 , D1
+0000340E  43F9 0000499B            446      lea feed_amount_msg , A1          assign message to address register A1
+00003414  303C 0011                447      move #17 , D0                     trap 17 outputs val in d0
+00003418  4E4F                     448      trap #15                         trap 15 interpt D0
+0000341A  223C 00000096            449      move.l   #150,D1     
+00003420  103C 0017                450      move.b   #23,D0                  trap 23 timer
+00003424  4E4F                     451      trap #15 
+00003426  103C 0004                452      move.b #4 ,D0        trap 4 for user input
+0000342A  4E4F                     453      trap #15             trap 15 interpt D0
+0000342C  B27C 0001                454      cmp #1 , D1          compare 1 to d1  
+00003430  1239 00017000            455      move.b $17000 , D1    move memory 7000 to d1
+00003436  2439 00016000            456      move.l $16000, D2     move memory 6000 to d2
+0000343C  2639 00015000            457      move.l $15000 , D3    move memory 5000 to d3
+00003442  C6C1                     458      mulu D1 , D3         mul d1 by d3
+00003444  23C3 00019000            459      move.l D3 , $19000    move d3 to memory 9000
+0000344A  B642                     460      cmp D2 , D3          compare d2 by d3
+0000344C  6D00 0022                461      blt     plenty_feed2 branch if less than 
+00003450  B642                     462      cmp D2 , D3          compare d2 by d3
+00003452  6E00 0002                463      bgt not_enough_feed2  branch if greater than
+00003456                           464  *-------------------------------------------------------
+00003456                           465  *------------not enough feed --------------------
+00003456                           466  * checks if there is not enough feed
+00003456                           467  *-------------------------------------------------------    
+00003456                           468      
+00003456                           469  not_enough_feed2:
+00003456                           470  
+00003456  43F9 00003F2F            471          lea low_feed  ,A1 assign message to address register A1
+0000345C  103C 000E                472         move.b #14 , D0          trap 14 output msg
+00003460  4E4F                     473         trap #15                 trap 15 interpt D0
+00003462  103C 0004                474          move.b #4 ,D0        trap 4 for user input
+00003466  4E4F                     475          trap #15             trap 15 interpt D0
+00003468  B27C 0001                476          cmp #1 , D1          compare 1 to d1 
+0000346C  6700 FE38                477          beq  mission2_prep
+00003470                           478          
+00003470                           479  *-------------------------------------------------------
+00003470                           480  *------------enough feed --------------------
+00003470                           481  *checks if there is enough feed
+00003470                           482  *-------------------------------------------------------     
+00003470                           483          
+00003470                           484  plenty_feed2:  
+00003470                           485  
+00003470                           486     
+00003470  43F9 00004328            487          lea enough_feed  ,A1 assign message to address register A1
+00003476  103C 000E                488          move.b #14 , D0          trap 14 output msg
+0000347A  4E4F                     489          trap #15                 trap 15 interpt D0
+0000347C  223C 00000096            490          move.l   #150,D1               store 150 in D0 
+00003482  103C 0017                491          move.b   #23,D0                trap 23 
+00003486  4E4F                     492          trap   #15                     trap 15 interpt D0 
+00003488                           493     
+00003488  43F9 00004420            494          lea info_feed  , A1
+0000348E  103C 000E                495          move.b #14 , D0          trap 14 output msg
+00003492  4E4F                     496          trap #15                 trap 15 interpt D0
+00003494  103C 0004                497          move.b #4 ,D0        trap 4 for user input
+00003498  4E4F                     498          trap #15             trap 15 interpt D0
+0000349A  B27C 0001                499          cmp #1 , D1
+0000349E  6700 02A4                500          beq  journey_mission2
+000034A2  B27C 0002                501          cmp #2 , D1
+000034A6  6700 FDFE                502          beq mission2_prep
+000034AA                           503           
+000034AA                           504  *-------------------------------------------------------
+000034AA                           505  *-----------------------Waiting winter-----------------------
+000034AA                           506  *waiting the winter with a good outcome 
+000034AA                           507  *------------------------------------------------------- 
+000034AA                           508  goodwait:
+000034AA                           509     
+000034AA                           510     
+000034AA  43F9 00004AFF            511      lea     wait_Outcome_message_good , A1                assign message to address register A1
+000034B0  103C 000E                512      move.b  #14,D0                                       
+000034B4  4E4F                     513      trap    #15  
+000034B6  223C 00000096            514      move.l   #150,D1               store 150 in D0 
+000034BC  103C 0017                515      move.b   #23,D0                trap 23 
+000034C0  4E4F                     516      trap   #15                                         
+000034C2  103C 0004                517      move.b #4 ,D0        trap 4 for user input
+000034C6  4E4F                     518      trap #15             trap 15 interpt D0
+000034C8  B27C 0001                519      cmp #1 , D1          compare 1 to d1 
+000034CC                           520  
+000034CC  123C 0002                521      move.b #2 , D1
+000034D0  1439 00017000            522      move.b $17000, D2
+000034D6  D242                     523      add D2 , D1
+000034D8  13C1 00017000            524      move.b D1 , $17000    
+000034DE  223C 000000C8            525      move.l #200 , D1
+000034E4  2439 00016000            526      move.l $16000 , D2
+000034EA  D441                     527      add D1 , D2
+000034EC  23C2 00016000            528      move.l D2 ,$16000
+000034F2  6000 FD54                529      bra     mission1_prep
+000034F6                           530  *-------------------------------------------------------
+000034F6                           531  *-----------------------Waiting winter-----------------------
+000034F6                           532  *waiting the winter with a bad outcome 
+000034F6                           533  *-------------------------------------------------------     
+000034F6                           534  badwait:
+000034F6                           535     
+000034F6                           536     
+000034F6  43F9 00004C9E            537      lea     wait_Outcome_message_bad , A1          assign message to address register A1
+000034FC  103C 000E                538      move.b #14 , D0          trap 14 output msg
+00003500  4E4F                     539      trap #15                 trap 15 interpt D0
+00003502  223C 00000096            540      move.l   #150,D1               store 150 in D0 
+00003508  103C 0017                541      move.b   #23,D0                trap 23 
+0000350C  4E4F                     542      trap   #15
+0000350E                           543      
+0000350E  4E4F                     544      trap    #15                                           
+00003510  103C 0004                545      move.b #4 ,D0
+00003514  4E4F                     546      trap #15
+00003516  B27C 0001                547      cmp #1 , D1
+0000351A                           548      
+0000351A  7264                     549      move.l #100 , D1
+0000351C  2439 00015000            550      move.l $15000 , D2
+00003522  9242                     551      sub D2 , D1
+00003524  13C1 00015000            552      move.b D1 , $15000 
+0000352A                           553  
+0000352A  6000 FD1C                554      bra     mission1_prep
+0000352E                           555  *-------------------------------------------------------
+0000352E                           556  *-----------------------Waiting winter-----------------------
+0000352E                           557  *waiting the winter with a good outcome 
+0000352E                           558  *------------------------------------------------------- 
+0000352E                           559  goodwait2:
+0000352E                           560     
+0000352E                           561     
+0000352E                           562  
+0000352E  43F9 00004AFF            563      lea     wait_Outcome_message_good , A1                assign message to address register A1
+00003534  103C 000E                564      move.b  #14,D0                                       
+00003538  4E4F                     565      trap    #15 
+0000353A  223C 00000096            566      move.l   #150,D1               store 150 in D0 
+00003540  103C 0017                567      move.b   #23,D0                trap 23 
+00003544  4E4F                     568      trap   #15
+00003546                           569                                         
+00003546  103C 0004                570      move.b #4 ,D0        trap 4 for user input
+0000354A  4E4F                     571      trap #15             trap 15 interpt D0
+0000354C  B27C 0001                572      cmp #1 , D1          compare 1 to d1 
+00003550                           573  
+00003550  123C 0004                574      move.b #4 , D1      move 4 to d1
+00003554  1439 00017000            575      move.b $17000, D2    move memory 1500 to d2
+0000355A  D242                     576      add D2 , D1         add d2 to d1
+0000355C  13C1 00017000            577      move.b D1 , $17000   move d1 to memory 1500
+00003562                           578      
+00003562  223C 00000190            579      move.l #400 , D1    move 400 to d1
+00003568  2439 00016000            580      move.l $16000 , D2   move memory 6000 to d2
+0000356E  D441                     581      add D1 , D2         add d1 to d2
+00003570  23C2 00016000            582      move.l D2 , $16000   move d2 to memory d2
+00003576  6000 FD2E                583      bra     mission2_prep
+0000357A                           584  *-------------------------------------------------------
+0000357A                           585  *-----------------------Waiting winter-----------------------
+0000357A                           586  *waiting the winter with a bad outcome 
+0000357A                           587  *-------------------------------------------------------     
+0000357A                           588  badwait2:
+0000357A                           589  
+0000357A                           590       
+0000357A  43F9 00004C9E            591      lea     wait_Outcome_message_bad , A1          assign message to address register A1
+00003580  103C 000E                592      move.b #14 , D0          trap 14 output msg
+00003584  4E4F                     593      trap #15                     trap 15 interpt D0
+00003586  223C 00000096            594      move.l   #150,D1               store 150 in D0 
+0000358C  103C 0017                595      move.b   #23,D0                trap 23 
+00003590  4E4F                     596      trap   #15
+00003592                           597                                              
+00003592  103C 0004                598      move.b #4 ,D0        trap 4 for user input
+00003596  4E4F                     599      trap #15             trap 15 interpt D0
+00003598  B27C 0001                600      cmp #1 , D1          compare 1 to d1 
+0000359C                           601      
+0000359C  223C 0000012C            602      move.l #300 , D1    move 300 to d1
+000035A2  2439 00015000            603      move.l $15000 , D2   move memory 3000 to d2
+000035A8  9242                     604      sub D2 , D1          add d2 to d1
+000035AA  13C1 00015000            605      move.b D1 , $15000 move d1 to memory 1500
+000035B0                           606  
+000035B0  6000 FCF4                607      bra     mission2_prep
+000035B4                           608  
+000035B4                           609  
+000035B4                           610  
+000035B4                           611  
+000035B4                           612  
+000035B4                           613  *-------------------------------------------------------
+000035B4                           614  *--------------------Horses Inventory---------------------
+000035B4                           615  * Number of horses to be allocated to a mission 1
+000035B4                           616  *------------------------------------------------------- 
+000035B4                           617  horses:
+000035B4                           618    
+000035B4  1239 00017000            619      move.b $17000 , D1
+000035BA  43F9 00003D0C            620      lea horses_amount_msg , A1       assign message to address register A1
+000035C0  303C 0011                621      move #17 , D0
+000035C4  4E4F                     622      trap #15             trap 15 interpt D0
+000035C6  223C 00000096            623      move.l   #150,D1      150 timer
+000035CC  103C 0017                624      move.b   #23,D0       trap 23 in d0
+000035D0  103C 0004                625      move.b #4 ,D0        trap 4 for user input
+000035D4  4E4F                     626      trap #15             trap 15 interpt D0
+000035D6  B27C 0001                627      cmp #1 , D1          compare 1 to d1 
+000035DA                           628            
+000035DA  143C 0006                629     move.b #6 , D2    available horses
+000035DE  13C2 00017000            630     move.b D2 , $17000
+000035E4                           631      
+000035E4  6000 FC62                632     bra     mission1_prep
+000035E8                           633  
+000035E8                           634  *-------------------------------------------------------
+000035E8                           635  *--------------------Horses Inventory---------------------
+000035E8                           636  * Number of horses to be allocated to a mission 2 
+000035E8                           637  *-------------------------------------------------------   
+000035E8                           638  horses_mission2:
+000035E8                           639      
+000035E8                           640    
+000035E8  1239 00017000            641       move.b $17000 , D1
+000035EE  43F9 00003D0C            642      lea horses_amount_msg , A1       assign message to address register A1
+000035F4  303C 0011                643      move #17 , D0
+000035F8  4E4F                     644      trap #15             trap 15 interpt D0
+000035FA  223C 00000096            645      move.l   #150,D1      150 timer
+00003600  103C 0017                646      move.b   #23,D0       trap 23 in d0
+00003604  4E4F                     647      trap #15         
+00003606  103C 0004                648      move.b #4 ,D0        trap 4 for user input
+0000360A  4E4F                     649      trap #15             trap 15 interpt D0
+0000360C  B27C 0001                650      cmp #1 , D1          compare 1 to d1 
+00003610                           651  
+00003610                           652      
+00003610  6000 FC94                653     bra     mission2_prep
+00003614                           654  
+00003614                           655  rate:
+00003614  6100 03B8                656      bsr     endl
+00003618  6100 0372                657      bsr     decorate
+0000361C  43F9 00005526            658      lea     rate_msg,A1            assign message to address register A1
+00003622  103C 000E                659      move.b  #14,D0                  trap 14 for msg output
+00003626  4E4F                     660      trap    #15                     trap 15 interpt D0
+00003628  6100 0362                661      bsr     decorate
+0000362C  4E75                     662      rts
+0000362E                           663      
+0000362E                           664   *-------------------------------------------------------
+0000362E                           665  *-----------------------cost of missin1----------------------
+0000362E                           666  * outputs the cost of the first mission
+0000362E                           667  *------------------------------------------------------- 
+0000362E                           668  mission1_Cost_Awards:
+0000362E                           669      
+0000362E                           670      
+0000362E  43F9 00004119            671      lea mission_Awards_and_cost , A1 assign message to address register A1
+00003634  103C 000E                672      move.b  #14,D0                  trap 14 for msg output
+00003638  4E4F                     673      trap    #15                     trap 15 interpt D0
+0000363A  223C 00000096            674      move.l   #150,D1               store 150 in D0 
+00003640  103C 0017                675      move.b   #23,D0                trap 23 
+00003644  4E4F                     676      trap   #15
+00003646  103C 0004                677      move.b #4 ,D0        trap 4 for user input
+0000364A  4E4F                     678      trap #15             trap 15 interpt D0
+0000364C  B27C 0001                679      cmp #1 , D1          compare 1 to d1 
+00003650                           680  
+00003650  2239 00017000            681      move.l $17000 , D1         move 7000 to d1     
+00003656  143C 0002                682      move.b #2 , D2            move 2 to d2
+0000365A  9242                     683      sub D2 , D1               sub d2 from d1
+0000365C  23C1 00017000            684      move.l D1 , $17000         move d1 to 7000
+00003662                           685  
+00003662  2239 00016000            686      move.l $16000 , D1       move memory 6000 d1
+00003668  243C 00000258            687      move.l #600 , D2        move 600 to d2
+0000366E  D242                     688      add D2 , D1             add d2 and d1
+00003670  23C1 00016000            689      move.l D1 , $16000       move d1 to memory 6000
+00003676                           690     
+00003676  2239 00010000            691      move.l $10000 ,D1       move memory 10000 to d1 
+0000367C  243C 000001F4            692      move.l #500 , D2        move 500 to d2
+00003682  D242                     693      add D2 ,D1              add d2 to d1
+00003684  23C1 00010000            694      move.l D1 , $10000      move d1 to 10000
+0000368A                           695   
+0000368A  6000 FC1A                696       bra mission2_prep      branch mission2 prep
+0000368E                           697       
+0000368E                           698      
+0000368E                           699      
+0000368E                           700   *-------------------------------------------------------
+0000368E                           701  *-----------------------cost of missin 2----------------------
+0000368E                           702  * outputs the cost of the second mission
+0000368E                           703  *-------------------------------------------------------     
+0000368E                           704                             
+0000368E                           705   mission2_Cost_Awards:
+0000368E                           706      
+0000368E                           707      
+0000368E  43F9 00004250            708      lea mission_Awards_and_cost2 , A1 assign message to address register A1
+00003694  103C 000E                709      move.b  #14,D0                  trap 14 for msg output
+00003698  4E4F                     710      trap    #15                     trap 15 interpt D0
+0000369A  223C 00000096            711      move.l   #150,D1               store 150 in D0 
+000036A0  103C 0017                712      move.b   #23,D0                trap 23 
+000036A4  4E4F                     713      trap   #15
+000036A6  103C 0004                714      move.b #4 ,D0        trap 4 for user input
+000036AA  4E4F                     715      trap #15             trap 15 interpt D0
+000036AC  B27C 0001                716      cmp #1 , D1          compare 1 to d1 
+000036B0  2239 00017000            717      move.l $17000 , D1    move memory 7000 d1         
+000036B6  143C 0004                718      move.b #4 , D2       move 4 to d2
+000036BA  9242                     719      sub D2 , D1          sub d2 from d1
+000036BC  23C1 00017000            720      move.l D1 , $17000    move d1 to memory 7000
+000036C2                           721  
+000036C2  2239 00016000            722      move.l $16000 , D1    move 6000 to memory d1
+000036C8  243C 000002BC            723      move.l #700 , D2     move 700 , d2
+000036CE  D242                     724      add D2 , D1          add d2 , d1
+000036D0  23C1 00016000            725      move.l D1 , $16000    move d1 6000
+000036D6                           726     
+000036D6  2239 00010000            727      move.l $10000 ,D1    move 10000 to d1
+000036DC  243C 000002BC            728      move.l #700 , D2     move 700 to d2
+000036E2  D242                     729      add D2 ,D1           add d2 to d1
+000036E4  23C1 00010000            730      move.l D1 , $10000   move d1 to memory 10000
+000036EA                           731     
+000036EA  6000 022A                732      bra end_Game         branch end game
+000036EE                           733  
+000036EE                           734      
+000036EE                           735  *-------------------------------------------------------
+000036EE                           736  *------------------Mission 1 Distance---------------------
+000036EE                           737  * Distance to battle location
+000036EE                           738  *------------------------------------------------------- 
+000036EE                           739  journey:
+000036EE                           740      
+000036EE  43F9 0000560A            741      lea     journey_msg,A1 assign message to address register A1
+000036F4  103C 000E                742      move.b  #14,D0                  trap 14 for msg output
+000036F8  4E4F                     743      trap    #15                     trap 15 interpt D0
+000036FA  223C 00000096            744      move.l   #150,D1               store 150 in D0 
+00003700  103C 0017                745      move.b   #23,D0                trap 23 
+00003704  4E4F                     746      trap   #15
+00003706  2239 00016000            747      move.l $16000 , D1               move memory 6000 d1
+0000370C  2439 00019000            748      move.l $19000, D2                move memory 9000 d2
+00003712                           749      
+00003712  0441 00C8                750      sub #200 , D1                   sub 200 from d1
+00003716  9242                     751      sub D2 , D1                     sub d1 from d2    
+00003718  23C1 00016000            752      move.l  D1 ,$16000               move d1 to memory 6000    
+0000371E  2239 00010000            753      move.l $10000 , D1              move 10000 to memory d1
+00003724  2439 00013000            754      move.l $13000, D2               move 13000 to memory d1
+0000372A                           755      
+0000372A  0441 00C8                756      sub #200 , D1                   sub 200 from d1
+0000372E  9242                     757      sub D2 , D1                     sub d1 from d2    
+00003730  23C1 00010000            758      move.l  D1 ,$10000              move d1 to memory 10000  
+00003736  103C 0004                759      move.b #4 ,D0        trap 4 for user input
+0000373A  4E4F                     760      trap #15             trap 15 interpt D0
+0000373C  B27C 0001                761      cmp #1 , D1          compare 1 to d1 
+00003740  6000 FBC2                762      bra mission1         bra mission1
+00003744                           763   *-------------------------------------------------------
+00003744                           764  *------------------Mission 2 journey---------------------
+00003744                           765  * Cost of the journey for mission 2
+00003744                           766  *------------------------------------------------------- 
+00003744                           767  journey_mission2:
+00003744                           768      
+00003744  43F9 0000560A            769      lea     journey_msg,A1 assign message to address register A1
+0000374A  103C 000E                770      move.b  #14,D0                  trap 14 for msg output
+0000374E  4E4F                     771      trap    #15                     trap 15 interpt D0
+00003750  223C 00000096            772      move.l   #150,D1               store 150 in D0 
+00003756  103C 0017                773      move.b   #23,D0                trap 23 
+0000375A  4E4F                     774      trap   #15                     trap 15 interpt D0
+0000375C  2239 00016000            775      move.l $16000 , D1               move memory 6000 d1
+00003762  2439 00019000            776      move.l $19000, D2                move memory 9000 d2
+00003768  0441 0190                777      sub #400 , D1                   sub 400 from d1
+0000376C  9242                     778      sub D2 , D1                     sub d2 from d1
+0000376E  23C1 00016000            779      move.l  D1 ,$16000
+00003774                           780      
+00003774  2239 00010000            781      move.l $10000 , D1              move memory 10000 d1
+0000377A  2439 00013000            782      move.l $13000, D2               move memory 13000 d2
+00003780  0441 0190                783      sub #400 , D1                   sub 400 from d1
+00003784  9242                     784      sub D2 , D1                     sub d2 from d1
+00003786  23C1 00010000            785      move.l  D1 ,$10000              move d1 memory  $10000
+0000378C                           786      
+0000378C  103C 0004                787      move.b #4 ,D0        trap 4 for user input
+00003790  4E4F                     788      trap #15             trap 15 interpt D0
+00003792  B27C 0001                789      cmp #1 , D1          compare 1 to d1 
+00003796  6000 FB86                790      bra mission2         branch to mission2
+0000379A                           791      
+0000379A                           792      
+0000379A                           793      
+0000379A                           794      
+0000379A                           795  
+0000379A                           796  *-------------------------------------------------------
+0000379A                           797  *-----------------------Soldiers----------------------
+0000379A                           798  * Number of soldiers for mission 1. This als determines 
+0000379A                           799  * cost of the soliders 
+0000379A                           800  *-------------------------------------------------------   
+0000379A                           801  soldiers:
+0000379A                           802     
+0000379A  1239 00018000            803      move.b $18000 , D1
+000037A0  43F9 00003E8C            804      lea soliders_amount_msg , A1  assign message to address register A1
+000037A6  303C 0011                805      move #17 , D0        trap 17 output val d0
+000037AA  4E4F                     806      trap #15             trap 15 interpt D0
+000037AC  223C 00000096            807      move.l   #150,D1     timer is 50 
+000037B2  103C 0017                808      move.b   #23,D0      trap 23 for timer
+000037B6  4E4F                     809      trap #15             trap 15 interpt D0
+000037B8  103C 0004                810      move.b #4 ,D0                   trap 4 for user input
+000037BC  4E4F                     811      trap #15                        trap 15 interpt D0
+000037BE  B27C 0001                812      cmp #1 , D1                     compare 1 to d1
+000037C2  1239 00018000            813      move.b $18000 , D1               store val in memory 8000 in d1
+000037C8  2439 00010000            814      move.l $10000, D2               store val in memory 10000 in d2
+000037CE  2639 00012000            815      move.l $12000 , D3              store val in memory 8000 in d1
+000037D4  C6C1                     816      mulu D1 , D3                    mul d1 by d3
+000037D6  23C3 00013000            817      move.l  D3 , $13000             move d3 to 13000
+000037DC  B642                     818      cmp D2 , D3                     compare d2 to d3
+000037DE  6D00 002E                819      blt     plenty_gold             branch if less than
+000037E2  B642                     820      cmp D2 , D3                     compare d2 to d3             
+000037E4  6E00 0002                821      bgt not_enough_gold             branch if greater than
+000037E8                           822  *-------------------------------------------------------
+000037E8                           823  *-----------------------not_enough_gold----------------------
+000037E8                           824  * outputs if you dont have enough gold
+000037E8                           825  *-------------------------------------------------------     
+000037E8                           826     
+000037E8                           827      
+000037E8                           828  not_enough_gold:
+000037E8                           829  
+000037E8  43F9 00004515            830          lea low_gold  ,A1   assign message to address register A1
+000037EE  103C 000E                831          move.b  #14,D0      trap 14 for msg output
+000037F2  4E4F                     832          trap    #15         trap 15 interpt D0
+000037F4  223C 00000096            833          move.l   #150,D1               store 150 in D0 
+000037FA  103C 0017                834          move.b   #23,D0                trap 23 
+000037FE  4E4F                     835          trap   #15                     trap 15 interpt D0    
+00003800  103C 0004                836          move.b #4 ,D0        trap 4 for user input
+00003804  4E4F                     837          trap #15             trap 15 interpt D0
+00003806  B27C 0001                838          cmp #1 , D1          compare 1 to d1
+0000380A  6700 FA3C                839          beq  mission1_prep   branch if equal to
+0000380E                           840  *-------------------------------------------------------
+0000380E                           841  *-----------------------enough_gold----------------------
+0000380E                           842  * outputs if you have enough gold
+0000380E                           843  *-------------------------------------------------------             
+0000380E                           844  plenty_gold:  
+0000380E                           845  
+0000380E                           846     
+0000380E  43F9 00004619            847          lea enough_gold  ,A1     assign message to address register A1
+00003814  103C 000E                848          move.b  #14,D0          trap 14 for msg output
+00003818  4E4F                     849          trap    #15             trap 15 interpt D0
+0000381A  223C 00000096            850          move.l   #150,D1               store 150 in D0 
+00003820  103C 0017                851          move.b   #23,D0                trap 23 
+00003824  4E4F                     852          trap   #15                     trap 15 interpt D0
+00003826  103C 0004                853          move.b #4 ,D0           trap 4 for user input
+0000382A  4E4F                     854          trap #15                trap 15 interpt D0
+0000382C  B27C 0001                855          cmp #1 , D1             copare 1 to d1
+00003830                           856          
+00003830  43F9 000046EC            857          lea info_gold  ,A1      msg stores a1
+00003836  103C 000E                858          move.b  #14,D0          trap 14 for msg output
+0000383A  4E4F                     859          trap    #15             trap 15 interpt D0
+0000383C                           860          
+0000383C                           861          
+0000383C  103C 0004                862          move.b #4 ,D0           trap 4 for user input
+00003840  4E4F                     863          trap #15                trap 15 interpt D0
+00003842  B27C 0001                864          cmp #1 , D1             compare 1 to d1
+00003846  6700 FA00                865          beq  mission1_prep      branch if equal to 
+0000384A  6D00 0198                866          blt invalid
+0000384E                           867  
+0000384E                           868  
+0000384E                           869              
+0000384E                           870  *-------------------------------------------------------
+0000384E                           871  *-----------------------Soldiers----------------------
+0000384E                           872  * Number of soldiers for mission 2. This als determines 
+0000384E                           873  * cost of the soliders 
+0000384E                           874  *-------------------------------------------------------   
+0000384E                           875  soldiers_mission2:
+0000384E                           876     
+0000384E                           877  
+0000384E  1239 00018000            878      move.b $18000 , D1
+00003854  43F9 00003E8C            879      lea soliders_amount_msg , A1  assign message to address register A1
+0000385A  303C 0011                880      move #17 , D0        trap 17 output val d0
+0000385E  4E4F                     881      trap #15             trap 15 interpt D0
+00003860  223C 00000096            882      move.l   #150,D1     timer is 50 
+00003866  103C 0017                883      move.b   #23,D0      trap 23 for timer
+0000386A  4E4F                     884      trap #15             trap 15 interpt D0
+0000386C                           885   
+0000386C  103C 0004                886      move.b #4 ,D0               trap 4 for user input
+00003870  4E4F                     887      trap #15                    trap 15 interpt D0
+00003872  B27C 0001                888      cmp #1 , D1                 compare 1 to D1
+00003876  1239 00018000            889      move.b $18000 , D1           move 8000 to d1
+0000387C  2439 00010000            890      move.l $10000, D2           move 10000 to d2
+00003882  2639 00012000            891      move.l $12000 , D3         move 12000 to d3
+00003888  C6C1                     892      mulu D1 , D3               multiply d1 by d1
+0000388A  23C3 00013000            893      move.l  D3 , $13000        move d3 to memory d3
+00003890  B642                     894      cmp D2 , D3                compare d2 to d3
+00003892  6D00 002E                895      blt     plenty_gold2        branchif less than
+00003896  B642                     896      cmp D2 , D3                 compare d2 to d3
+00003898  6E00 0002                897      bgt not_enough_gold2        branchif greater than
+0000389C                           898  *-------------------------------------------------------
+0000389C                           899  *-----------------------not_enough_gold2----------------------
+0000389C                           900  * outputs if you dont have enough gold
+0000389C                           901  *-------------------------------------------------------     
+0000389C                           902      
+0000389C                           903  not_enough_gold2:
+0000389C                           904  
+0000389C  43F9 00004515            905          lea low_gold  ,A1       msg in a1
+000038A2  103C 000E                906          move.b  #14,D0          trap 14 msg output
+000038A6  4E4F                     907          trap    #15             trap 15 interpt D0
+000038A8  223C 00000096            908          move.l   #150,D1               store 150 in D0 
+000038AE  103C 0017                909          move.b   #23,D0                trap 23 
+000038B2  4E4F                     910          trap   #15                     trap 15 interpt D0
+000038B4  103C 0004                911          move.b #4 ,D0            trap 4 for user input
+000038B8  4E4F                     912          trap #15                    trap 15 interpt D0
+000038BA  B27C 0001                913          cmp #1 , D1              compare 1 to d1
+000038BE  6700 F9E6                914          beq  mission2_prep        branch if equal
+000038C2                           915  *-------------------------------------------------------
+000038C2                           916  *-----------------------enough_gold2----------------------
+000038C2                           917  * outputs if you have enough gold
+000038C2                           918  *-------------------------------------------------------            
+000038C2                           919  plenty_gold2:  
+000038C2                           920  
+000038C2                           921     
+000038C2  43F9 00004619            922          lea enough_gold  ,A1    msg in a1  
+000038C8  103C 000E                923          move.b  #14,D0          trap 14 msg output
+000038CC  4E4F                     924          trap    #15             trap 15 interpt D0
+000038CE  223C 00000096            925          move.l   #150,D1               store 150 in D0 
+000038D4  103C 0017                926          move.b   #23,D0                trap 23 
+000038D8  4E4F                     927          trap   #15                     trap 15 interpt D0
+000038DA  103C 0004                928          move.b #4 ,D0           move 4 to d0
+000038DE  4E4F                     929          trap #15                trap 15 interpt D0
+000038E0  B27C 0001                930          cmp #1 , D1              compare 1 to d0
+000038E4                           931           
+000038E4  43F9 000046EC            932          lea info_gold  ,A1      store msg in a1
+000038EA  103C 000E                933          move.b  #14,D0          trap 14 msg output
+000038EE  4E4F                     934          trap    #15              trap 15 interpt D0
+000038F0                           935         
+000038F0                           936          
+000038F0  103C 0004                937          move.b #4 ,D0          trap 4 for user input
+000038F4  4E4F                     938          trap #15                trap 15 interpt D0
+000038F6  B27C 0001                939          cmp #1 , D1             compare 1 to d0
+000038FA  6700 F9AA                940          beq  mission2_prep       brnch if equal to mission prep 2
+000038FE                           941          
+000038FE                           942  
+000038FE                           943  *-------------------------------------------------------
+000038FE                           944  *---Game Play (Mission Progress, Battle Maneuvers)------
+000038FE                           945  *------------------------------------------------------- 
+000038FE                           946  gameplay:
+000038FE  6100 00CE                947      bsr     endl
+00003902  6100 0088                948      bsr     decorate
+00003906                           949  
+00003906  103C 000E                950      move.b  #14,D0
+0000390A  4E4F                     951      trap    #15
+0000390C  6100 007E                952      bsr     decorate
+00003910  6100 0050                953      bsr     collision
+00003914  4E75                     954      rts
+00003916                           955  end_Game:
+00003916                           956  
+00003916  43F9 00004A45            957          lea ending_msg , A1  ending msg
+0000391C  103C 000E                958          move.b #14 , D0      trap 14 msg output D0
+00003920  4E4F                     959          trap #15            trap 15 interpt D0
+00003922  223C 00000096            960          move.l   #150,D1               store 150 in D0 
+00003928  103C 0017                961          move.b   #23,D0                trap 23 
+0000392C  4E4F                     962          trap   #15                     trap 15 interpt D0
+0000392E                           963  
+0000392E  2239 00016000            964          move.l $16000 , D1      move val in 6000 D1
+00003934  2439 00010000            965          move.l $10000 , D2     move val in 10000 D2
+0000393A  D441                     966          add D1 , D2            add D2 and D1
+0000393C  23C2 00014000            967          move.l D2 , $14000     store D2 in 14000
+00003942                           968          
+00003942  6000 006C                969          bra replay
+00003946                           970  *-------------------------------------------------------
+00003946                           971  *-----------------Heads Up Display (Score)--------------
+00003946                           972  * Retrieves the score from memory location
+00003946                           973  *-------------------------------------------------------   
+00003946                           974  hud:
+00003946                           975  
+00003946  6100 0086                976      bsr     endl
+0000394A  6100 0040                977      bsr     decorate
+0000394E                           978  
+0000394E  103C 000E                979      move.b  #14,D0      trap 14 msg output
+00003952  4E4F                     980      trap    #15         trap 15 interpt D0
+00003954  1213                     981      move.b  (A3),D1     retrieve the value A3 point to and move to D1
+00003956  103C 0003                982      move.b  #3,D0       move literal 3 to D0
+0000395A  4E4F                     983      trap    #15         intrepret value in D0, which 3 which displays D1
+0000395C  6100 002E                984      bsr     decorate
+00003960  4E75                     985      rts
+00003962                           986  
+00003962                           987  *-------------------------------------------------------
+00003962                           988  *-----------------------Taking Fire---------------------
+00003962                           989  * This could be used for collision detection, if 
+00003962                           990  *-------------------------------------------------------
+00003962                           991  collision:
+00003962  123C 0064                992      move.b  #mine_loc,D1
+00003966  B27C 0064                993      cmp     #100,D1 is( x == 100)?
+0000396A  6600 000A                994      bne     collision_miss if x is equal to 100, then hit
+0000396E                           995  collision_hit:
+0000396E                           996      *hit
+0000396E                           997  
+0000396E  103C 000E                998         move.b #14 , D0          trap 14 output msg
+00003972  4E4F                     999         trap #15                 trap 15 interpt D0
+00003974  4E75                    1000      rts
+00003976                          1001      
+00003976                          1002  collision_miss:
+00003976                          1003      *miss
+00003976                          1004  
+00003976  103C 000E               1005      move.b #14 , D0          trap 14 output msg
+0000397A  4E4F                    1006      trap #15                 trap 15 interpt D0
+0000397C  4E75                    1007      rts
+0000397E                          1008  
+0000397E                          1009  *-------------------------------------------------------
+0000397E                          1010  *--------------------------Loop-------------------------
+0000397E                          1011  *-------------------------------------------------------
+0000397E                          1012  loop:
+0000397E  163C 0005               1013      move.b  #5, D3 loop counter D3=5
+00003982                          1014  next:
+00003982                          1015  
+00003982  103C 000E               1016         move.b #14 , D0          trap 14 output msg
+00003986  4E4F                    1017         trap #15                 trap 15 interpt D0
+00003988  5343                    1018      sub     #1,D3   decrement loop counter
+0000398A  66F6                    1019      bne     next    repeat until D0=0
+0000398C                          1020  
+0000398C                          1021  *-------------------------------------------------------
+0000398C                          1022  *------------------Screen Decoration--------------------
+0000398C                          1023  *-------------------------------------------------------
+0000398C                          1024  decorate:
+0000398C  163C 003C               1025      move.b  #60, D3
+00003990  6100 003C               1026      bsr     endl
+00003994                          1027  out:
+00003994                          1028  
+00003994  103C 000E               1029      move.b  #14,D0   trap 14 msg output
+00003998  4E4F                    1030      trap    #15      trap 15 interpt D0
+0000399A  5343                    1031      sub     #1,D3   decrement loop counter
+0000399C  66F6                    1032      bne     out     repeat until D0=0
+0000399E  6100 002E               1033      bsr     endl
+000039A2  4E75                    1034      rts
+000039A4                          1035      
+000039A4                          1036  clear_screen: 
+000039A4  103C 000B               1037      move.b  #11,D0      clear screen
+000039A8  323C FF00               1038      move.w  #$ff00,D1
+000039AC  4E4F                    1039      trap    #15
+000039AE  4E75                    1040      rts
+000039B0                          1041  *-------------------------------------------------------
+000039B0                          1042  *------------------------Replay-------------------------
+000039B0                          1043  *-------------------------------------------------------
+000039B0                          1044  replay:
+000039B0  6100 001C               1045      bsr     endl
+000039B4  43F9 000039EF           1046      lea replay_msg , A1
+000039BA  103C 000E               1047      move.b #14 , D0          trap 14 output msg
+000039BE  4E4F                    1048      trap #15                 trap 15 interpt D0
+000039C0                          1049      
+000039C0  103C 0004               1050      move.b  #4,D0   move 4 to d0
+000039C4  4E4F                    1051      trap    #15   trap 15 interpt D0
+000039C6  B27C 0001               1052      cmp #1 , D1   compare 1 to d1
+000039CA  6700 F63E               1053      beq welcome   branch if equal
+000039CE                          1054  
+000039CE                          1055  
+000039CE                          1056  endl:
+000039CE  48E7 8040               1057      movem.l D0/A1,-(A7)
+000039D2  303C 000E               1058      move    #14,D0
+000039D6  43F9 000039EC           1059      lea     crlf,A1
+000039DC  4E4F                    1060      trap    #15
+000039DE  4CDF 0201               1061      movem.l (A7)+,D0/A1
+000039E2  4E75                    1062      rts
+000039E4                          1063      
+000039E4                          1064  invalid:
+000039E4                          1065  
+000039E4                          1066  
+000039E4  103C 000E               1067         move.b #14 , D0          trap 14 output msg
+000039E8  4E4F                    1068         trap #15                 trap 15 interpt D0
+000039EA  4E75                    1069         rts
+000039EC                          1070  *-------------------------------------------------------
+000039EC                          1071  *-------------------Data Delarations--------------------
+000039EC                          1072  *-------------------------------------------------------
+000039EC                          1073  
+000039EC= 0D 0A 00                1074  crlf:           dc.b    $0D,$0A,0
+000039EF                          1075  
+000039EF= 2A 2A 2A 2A 2A 2A ...   1076  replay_msg:     dc.b    '************************************************************'
+00003A2B= 0D 0A                   1077                  dc.b    $0D,$0A
+00003A2D= 50 72 65 73 73 20 ...   1078                  dc.b    'Press 1 to replay game'
+00003A43= 0D 0A                   1079                  dc.b    $0D,$0A
+00003A45= 2A 2A 2A 2A 2A 2A ...   1080                  dc.b    '************************************************************'
+00003A81= 0D 0A 00                1081                  dc.b    $0D,$0A,0
+00003A84                          1082  
+00003A84= 2A 2A 2A 2A 2A 2A ...   1083  invalid_msg:    dc.b    '************************************************************'
+00003AC0= 0D 0A                   1084                  dc.b    $0D,$0A
+00003AC2= 4D 79 20 6C 6F 72 ...   1085                  dc.b    'My lord that is an invalid selection'
+00003AE6= 0D 0A                   1086                  dc.b    $0D,$0A
+00003AE8= 2A 2A 2A 2A 2A 2A ...   1087                  dc.b    '************************************************************'
+00003B24= 0D 0A 00                1088                  dc.b    $0D,$0A,0
+00003B27                          1089  
+00003B27= 2A 2A 2A 2A 2A 2A ...   1090  Buy_feed_msg:    dc.b    '************************************************************'
+00003B63= 0D 0A                   1091                  dc.b    $0D,$0A
+00003B65= 79 6F 75 20 62 6F ...   1092                  dc.b    'you bough 100 feed and it cost 200'
+00003B87= 0D 0A                   1093                  dc.b    $0D,$0A
+00003B89= 2A 2A 2A 2A 2A 2A ...   1094                  dc.b    '************************************************************'
+00003BC5= 0D 0A 00                1095                  dc.b    $0D,$0A,0
+00003BC8                          1096  
+00003BC8= 2A 2A 2A 2A 2A 2A ...   1097  Buy_horses_msg:       dc.b    '************************************************************'
+00003C04= 0D 0A                   1098                  dc.b    $0D,$0A
+00003C06= 79 6F 75 20 62 6F ...   1099                  dc.b    'you bough 2 horses and it cost 300'
+00003C28= 0D 0A                   1100                  dc.b    $0D,$0A
+00003C2A= 2A 2A 2A 2A 2A 2A ...   1101                  dc.b    '************************************************************'
+00003C66= 0D 0A 00                1102                  dc.b    $0D,$0A,0
+00003C69                          1103                  
+00003C69= 2A 2A 2A 2A 2A 2A ...   1104  Buy_soliders_msg:   dc.b    '************************************************************'
+00003CA5= 0D 0A                   1105                  dc.b    $0D,$0A
+00003CA7= 79 6F 75 20 62 6F ...   1106                  dc.b    'you bough 2 soliders and it cost 400'
+00003CCB= 0D 0A                   1107                  dc.b    $0D,$0A
+00003CCD= 2A 2A 2A 2A 2A 2A ...   1108                  dc.b    '************************************************************'
+00003D09= 0D 0A 00                1109                  dc.b    $0D,$0A,0
+00003D0C                          1110  
+00003D0C                          1111  
+00003D0C= 2A 2A 2A 2A 2A 2A ...   1112  horses_amount_msg: dc.b    '************************************************************'
+00003D48= 0D 0A                   1113                     dc.b    $0D,$0A
+00003D4A= 54 68 65 20 6E 75 ...   1114                    dc.b    'The number of horses you have is :'
+00003D6C= 0D 0A                   1115                    dc.b    $0D,$0A
+00003D6E= 2A 2A 2A 2A 2A 2A ...   1116                    dc.b    '************************************************************'
+00003DAA= 0D 0A 00                1117                    dc.b    $0D,$0A,0
+00003DAD                          1118  
+00003DAD= 2A 2A 2A 2A 2A 2A ...   1119  buy_suff_msg:     dc.b    '************************************************************'
+00003DE9= 0D 0A                   1120                    dc.b    $0D,$0A
+00003DEB= 54 6F 20 62 75 79 ...   1121                    dc.b    'To buy feed press 1'
+00003DFE= 0D 0A                   1122                    dc.b    $0D,$0A
+00003E00= 54 6F 20 62 75 79 ...   1123                    dc.b    'To buy horses press 2'
+00003E15= 0D 0A                   1124                    dc.b    $0D,$0A
+00003E17= 54 6F 20 62 75 79 ...   1125                    dc.b    'To buy soliders press 3'
+00003E2E= 0D 0A                   1126                    dc.b    $0D,$0A
+00003E30= 54 6F 20 72 65 74 ...   1127                    dc.b    'To return to mission prep 4'
+00003E4B= 0D 0A                   1128                    dc.b    $0D,$0A
+00003E4D= 2A 2A 2A 2A 2A 2A ...   1129                    dc.b    '************************************************************'
+00003E89= 0D 0A 00                1130                    dc.b    $0D,$0A,0
+00003E8C                          1131  
+00003E8C                          1132  
+00003E8C= 2A 2A 2A 2A 2A 2A ...   1133  soliders_amount_msg:    dc.b    '************************************************************'
+00003EC8= 0D 0A                   1134                          dc.b    $0D,$0A
+00003ECA= 54 68 65 20 6E 75 ...   1135                          dc.b    'The number of soliders you have is :'
+00003EEE= 0D 0A                   1136                          dc.b    $0D,$0A
+00003EF0= 2A 2A 2A 2A 2A 2A ...   1137                          dc.b    '************************************************************'
+00003F2C= 0D 0A 00                1138                          dc.b    $0D,$0A,0
+00003F2F                          1139  
+00003F2F                          1140                     
+00003F2F= 2A 2A 2A 2A 2A 2A ...   1141  low_feed:   dc.b    '************************************************************'
+00003F6B= 0D 0A                   1142              dc.b    $0D,$0A
+00003F6D= 4D 79 20 6C 6F 72 ...   1143              dc.b    'My lord we dont have enough feed to go to Battle'
+00003F9D= 0D 0A                   1144              dc.b    $0D,$0A
+00003F9F= 50 72 65 73 73 20 ...   1145              dc.b    'Press 1 to return to preparaton '
+00003FBF= 0D 0A                   1146              dc.b    $0D,$0A
+00003FC1= 49 20 73 75 67 67 ...   1147              dc.b    'I suggest we wait the winter till we have enough'
+00003FF1= 0D 0A                   1148              dc.b    $0D,$0A
+00003FF3= 2A 2A 2A 2A 2A 2A ...   1149              dc.b    '************************************************************'
+0000402F= 0D 0A 00                1150              dc.b    $0D,$0A,0
+00004032                          1151              
+00004032                          1152              
+00004032= 2A 2A 2A 2A 2A 2A ...   1153  shop_msg:                dc.b    '************************************************************'
+0000406E= 0D 0A                   1154                           dc.b    $0D,$0A
+00004070= 57 65 6C 63 6F 6D ...   1155                           dc.b    'Welcome to the shop to view feed press 1. '
+0000409A= 0D 0A                   1156                           dc.b    $0D,$0A
+0000409C= 54 6F 20 76 69 65 ...   1157                           dc.b    'To view horses press 2 '
+000040B3= 0D 0A                   1158                           dc.b    $0D,$0A
+000040B5= 54 6F 20 76 69 65 ...   1159                           dc.b    'To view soliders press 3 '
+000040CE= 0D 0A                   1160                           dc.b    $0D,$0A
+000040D0= 54 6F 20 62 75 79 ...   1161                           dc.b    'To buy 4'
+000040D8= 0D 0A                   1162                           dc.b    $0D,$0A
+000040DA= 2A 2A 2A 2A 2A 2A ...   1163                           dc.b    '************************************************************'
+00004116= 0D 0A 00                1164                           dc.b    $0D,$0A,0  
+00004119                          1165  
+00004119                          1166           
+00004119= 2A 2A 2A 2A 2A 2A ...   1167  mission_Awards_and_cost: dc.b    '************************************************************'
+00004155= 0D 0A                   1168                           dc.b    $0D,$0A
+00004157= 4D 79 20 6C 6F 72 ...   1169                           dc.b    'My lord we have taken Algard Castle. '
+0000417C= 0D 0A                   1170                           dc.b    $0D,$0A
+0000417E= 57 65 20 67 61 69 ...   1171                           dc.b    'We gained 600 feed and 500 gold '
+0000419E= 0D 0A                   1172                           dc.b    $0D,$0A
+000041A0= 4F 75 72 20 6E 65 ...   1173                           dc.b    'Our next target is Garth Castle .Press 1 to go to preparaton '
+000041DD= 0D 0A                   1174                           dc.b    $0D,$0A
+000041DF= 49 20 73 75 67 67 ...   1175                           dc.b    'I suggest we wait the winter till we have enough'
+0000420F= 0D 0A                   1176                           dc.b    $0D,$0A
+00004211= 2A 2A 2A 2A 2A 2A ...   1177                           dc.b    '************************************************************'
+0000424D= 0D 0A 00                1178                           dc.b    $0D,$0A,0   
+00004250                          1179  
+00004250                          1180            
+00004250= 2A 2A 2A 2A 2A 2A ...   1181  mission_Awards_and_cost2: dc.b    '************************************************************'
+0000428C= 0D 0A                   1182                           dc.b    $0D,$0A
+0000428E= 4D 79 20 6C 6F 72 ...   1183                           dc.b    'My lord we have taken Garth Castle.'
+000042B1= 0D 0A                   1184                           dc.b    $0D,$0A
+000042B3= 20 77 65 20 67 61 ...   1185                           dc.b    ' we gained 700 gold and 700 feed and lost 4 horses  '
+000042E7= 0D 0A                   1186                           dc.b    $0D,$0A
+000042E9= 2A 2A 2A 2A 2A 2A ...   1187                           dc.b    '************************************************************'
+00004325= 0D 0A 00                1188                           dc.b    $0D,$0A,0    
+00004328                          1189                   
+00004328= 2A 2A 2A 2A 2A 2A ...   1190  enough_feed:          dc.b    '************************************************************'
+00004364= 0D 0A                   1191                        dc.b    $0D,$0A
+00004366= 4D 79 20 6C 6F 72 ...   1192                        dc.b    'My lord we have plenty of feed for the mission'
+00004394= 0D 0A                   1193                        dc.b    $0D,$0A
+00004396= 57 65 20 63 61 6E ...   1194                        dc.b    'We can wait the winter or attack now press 1 to attack or 2 ' 
+000043D2= 0D 0A                   1195                        dc.b    $0D,$0A
+000043D4= 32 20 74 6F 20 72 ...   1196                        dc.b    '2 to return'
+000043DF= 0D 0A                   1197                        dc.b    $0D,$0A
+000043E1= 2A 2A 2A 2A 2A 2A ...   1198                        dc.b    '************************************************************'
+0000441D= 0D 0A 00                1199                        dc.b    $0D,$0A,0
+00004420                          1200                        
+00004420= 2A 2A 2A 2A 2A 2A ...   1201  info_feed:            dc.b    '************************************************************'
+0000445C= 0D 0A                   1202                        dc.b    $0D,$0A
+0000445E= 4D 79 20 6C 6F 72 ...   1203                        dc.b    'My lord we can attack now or return to preperation at the '
+00004498= 0D 0A                   1204                        dc.b    $0D,$0A
+0000449A= 63 61 73 74 6C 65 ...   1205                        dc.b    'castle. Press 1 to attack now or 2 to return to prepertion'
+000044D4= 0D 0A                   1206                        dc.b    $0D,$0A
+000044D6= 2A 2A 2A 2A 2A 2A ...   1207                        dc.b    '************************************************************'
+00004512= 0D 0A 00                1208                        dc.b    $0D,$0A,0
+00004515                          1209  
+00004515= 2A 2A 2A 2A 2A 2A ...   1210  low_gold:   dc.b    '************************************************************'
+00004551= 0D 0A                   1211              dc.b    $0D,$0A
+00004553= 4D 79 20 6C 6F 72 ...   1212              dc.b    'My lord we dont have enough gold to go to Battle'
+00004583= 0D 0A                   1213              dc.b    $0D,$0A
+00004585= 50 72 65 73 73 20 ...   1214              dc.b    'Press 1 to return to preparaton  '
+000045A6= 0D 0A                   1215              dc.b    $0D,$0A
+000045A8= 49 20 73 75 67 67 ...   1216              dc.b    'I suggest we wait the winter till we have enough'
+000045D8= 0D 0A                   1217              dc.b    $0D,$0A
+000045DA= 2A 2A 2A 2A 2A 2A ...   1218              dc.b    '************************************************************'
+00004616= 0D 0A 00                1219              dc.b    $0D,$0A,0
+00004619                          1220                        
+00004619= 2A 2A 2A 2A 2A 2A ...   1221  enough_gold:          dc.b    '************************************************************'
+00004655= 0D 0A                   1222                        dc.b    $0D,$0A
+00004657= 4D 79 20 6C 6F 72 ...   1223                        dc.b    'My lord we have plenty of gold for the mission'
+00004685= 0D 0A                   1224                        dc.b    $0D,$0A
+00004687= 57 65 20 63 61 6E ...   1225                        dc.b    'We can wait the winter or attack now'            
+000046AB= 0D 0A                   1226                        dc.b    $0D,$0A
+000046AD= 2A 2A 2A 2A 2A 2A ...   1227                        dc.b    '************************************************************'
+000046E9= 0D 0A 00                1228                        dc.b    $0D,$0A,0
+000046EC                          1229                        
+000046EC= 2A 2A 2A 2A 2A 2A ...   1230  info_gold:            dc.b    '************************************************************'
+00004728= 0D 0A                   1231                        dc.b    $0D,$0A
+0000472A= 4D 79 20 6C 6F 72 ...   1232                        dc.b    'My lord return to preperation at the '
+0000474F= 0D 0A                   1233                        dc.b    $0D,$0A
+00004751= 63 61 73 74 6C 65 ...   1234                        dc.b    'castle. Press 1 to return to prepertion'
+00004778= 0D 0A                   1235                        dc.b    $0D,$0A
+0000477A= 2A 2A 2A 2A 2A 2A ...   1236                        dc.b    '************************************************************'
+000047B6= 0D 0A 00                1237                        dc.b    $0D,$0A,0
+000047B9                          1238  
+000047B9                          1239  
+000047B9                          1240                        
+000047B9= 2A 2A 2A 2A 2A 2A ...   1241  start_msg:    dc.b    '************************************************************'
+000047F5= 0D 0A                   1242                dc.b    $0D,$0A
+000047F7= 54 68 65 20 79 65 ...   1243                dc.b    'The year is 133 of the first era. The king is dead and and a cival war has '
+00004842= 0D 0A                   1244                dc.b    $0D,$0A
+00004844= 73 74 61 72 74 65 ...   1245                dc.b    'started for his throne. As the rightful heir you must secure all the '
+00004889= 0D 0A                   1246                dc.b    $0D,$0A
+0000488B= 63 61 73 74 6C 65 ...   1247                dc.b    'castles in the kingdom and secure your reign '
+000048B8= 0D 0A                   1248                dc.b    $0D,$0A
+000048BA= 2A 2A 2A 2A 2A 2A ...   1249                dc.b    '************************************************************'
+000048F6= 0D 0A 00                1250                dc.b    $0D,$0A,0
+000048F9                          1251                
+000048F9= 2A 2A 2A 2A 2A 2A ...   1252  Go_to_mission1_prep:  dc.b    '************************************************************'
+00004935= 0D 0A                   1253                dc.b    $0D,$0A
+00004937= 54 6F 20 70 72 65 ...   1254                dc.b    'To prepare for the mission press 1 '
+0000495A= 0D 0A                   1255                dc.b    $0D,$0A
+0000495C= 2A 2A 2A 2A 2A 2A ...   1256                dc.b    '************************************************************'
+00004998= 0D 0A 00                1257                dc.b    $0D,$0A,0
+0000499B                          1258  
+0000499B= 2A 2A 2A 2A 2A 2A ...   1259  feed_amount_msg:     dc.b    '************************************************************'
+000049D7= 0D 0A                   1260                       dc.b    $0D,$0A
+000049D9= 59 6F 75 72 20 47 ...   1261                       dc.b    'Your Grace the amount of feed you have is: '
+00004A04= 0D 0A                   1262                       dc.b    $0D,$0A
+00004A06= 2A 2A 2A 2A 2A 2A ...   1263                       dc.b    '************************************************************'
+00004A42= 0D 0A 00                1264                       dc.b    $0D,$0A,0
+00004A45                          1265                
+00004A45= 2A 2A 2A 2A 2A 2A ...   1266  ending_msg:    dc.b    '************************************************************'
+00004A81= 0D 0A                   1267                 dc.b    $0D,$0A
+00004A83= 43 6F 6E 67 72 61 ...   1268                 dc.b    'Congrates you have completed ZorkQuest and your score was: '
+00004ABE= 0D 0A                   1269                 dc.b    $0D,$0A
+00004AC0= 2A 2A 2A 2A 2A 2A ...   1270                 dc.b    '************************************************************'
+00004AFC= 0D 0A 00                1271                 dc.b    $0D,$0A,0
+00004AFF                          1272  
+00004AFF= 2A 2A 2A 2A 2A 2A ...   1273  wait_OutCome_message_good:  dc.b    '************************************************************'
+00004B3B= 0D 0A                   1274                              dc.b    $0D,$0A
+00004B3D= 4D 79 20 6C 6F 72 ...   1275                              dc.b    'My lord you chose to wait over the winter and our farmers have reported  '
+00004B86= 0D 0A                   1276                              dc.b    $0D,$0A
+00004B88= 77 65 20 68 61 76 ...   1277                              dc.b    'we have had a good year and a crop of feed have been farmed '
+00004BC4= 0D 0A                   1278                              dc.b    $0D,$0A
+00004BC6= 4F 75 72 20 73 63 ...   1279                              dc.b    'Our scouts have reported that due to the the crop that additional horses '
+00004C0F= 0D 0A                   1280                              dc.b    $0D,$0A
+00004C11= 68 61 76 65 20 62 ...   1281                              dc.b    'have been bred. we could attack now or wait again or attck'
+00004C4B= 0D 0A                   1282                              dc.b    $0D,$0A
+00004C4D= 2A 2A 2A 2A 2A 2A ...   1283                              dc.b    '******************************************************************************'
+00004C9B= 0D 0A 00                1284                              dc.b    $0D,$0A,0  
+00004C9E                          1285            
+00004C9E= 2A 2A 2A 2A 2A 2A ...   1286  wait_OutCome_message_bad:    dc.b    '************************************************************'
+00004CDA= 0D 0A                   1287                               dc.b    $0D,$0A
+00004CDC= 4D 79 20 6C 6F 72 ...   1288                               dc.b    'My lord you chose to wait over the winter and our farmers have reported'
+00004D23= 0D 0A                   1289                               dc.b    $0D,$0A
+00004D25= 77 65 20 68 61 76 ...   1290                               dc.b    'we have had a famine this year and our horses have starved '
+00004D60= 0D 0A                   1291                               dc.b    $0D,$0A
+00004D62= 77 65 20 6C 6F 73 ...   1292                               dc.b    'we lost feed'
+00004D6E= 0D 0A                   1293                               dc.b    $0D,$0A
+00004D70= 77 65 20 63 6F 75 ...   1294                               dc.b    'we could attack now or wait again castle so we should attack soon'
+00004DB1= 0D 0A                   1295                               dc.b    $0D,$0A
+00004DB3= 2A 2A 2A 2A 2A 2A ...   1296                               dc.b    '************************************************************'
+00004DEF= 0D 0A 00                1297                               dc.b    $0D,$0A,0  
+00004DF2                          1298       
+00004DF2                          1299  
+00004DF2                          1300               
+00004DF2= 2A 2A 2A 2A 2A 2A ...   1301  battle_msg:   dc.b    '************************************************************'
+00004E2E= 0D 0A                   1302                dc.b    $0D,$0A
+00004E30= 4D 79 20 6C 6F 72 ...   1303                dc.b    'My lord we have arrived at Algard castle  '
+00004E5A= 0D 0A                   1304                dc.b    $0D,$0A
+00004E5C= 77 65 20 63 61 6E ...   1305                dc.b    'we can attack now or we can wait. '
+00004E7E= 0D 0A                   1306                dc.b    $0D,$0A
+00004E80= 20 50 72 65 73 73 ...   1307                dc.b    ' Press 1 to attack'
+00004E92= 0D 0A                   1308                dc.b    $0D,$0A
+00004E94= 2A 2A 2A 2A 2A 2A ...   1309                dc.b    '************************************************************'
+00004ED0= 0D 0A 00                1310                dc.b    $0D,$0A,0             
+00004ED3                          1311                           
+00004ED3= 2A 2A 2A 2A 2A 2A ...   1312  battle_msg2:   dc.b    '************************************************************'
+00004F0F= 0D 0A                   1313                dc.b    $0D,$0A
+00004F11= 4D 79 20 6C 6F 72 ...   1314                dc.b    'My lord we have arrived at Garth castle  '
+00004F3A= 0D 0A                   1315                dc.b    $0D,$0A
+00004F3C= 77 65 20 63 61 6E ...   1316                dc.b    'we can attack now or we can wait. '
+00004F5E= 0D 0A                   1317                dc.b    $0D,$0A
+00004F60= 20 50 72 65 73 73 ...   1318                dc.b    ' Press 1 to attack'
+00004F72= 0D 0A                   1319                dc.b    $0D,$0A
+00004F74= 2A 2A 2A 2A 2A 2A ...   1320                dc.b    '************************************************************'
+00004FB0= 0D 0A 00                1321                dc.b    $0D,$0A,0             
+00004FB3                          1322                                         
+00004FB3                          1323                        
+00004FB3= 2A 2A 2A 2A 2A 2A ...   1324   Algard_Castle_msg:   dc.b    '************************************************************'
+00004FEF= 0D 0A                   1325                        dc.b    $0D,$0A
+00004FF1= 50 72 65 70 61 72 ...   1326                        dc.b    'Preparing to assault Algard Castle. To see how '
+00005020= 0D 0A                   1327                        dc.b    $0D,$0A
+00005022= 6D 75 74 63 68 20 ...   1328                        dc.b    'mutch feed you have or to attack press 1. To see how many   '
+0000505E= 0D 0A                   1329                        dc.b    $0D,$0A
+00005060= 68 6F 72 73 65 73 ...   1330                        dc.b    'horses you have press 2.  '
+0000507A= 0D 0A                   1331                        dc.b    $0D,$0A
+0000507C= 50 72 65 73 73 20 ...   1332                        dc.b    'Press 3 to see soliders available for attack.  '
+000050AB= 0D 0A                   1333                        dc.b    $0D,$0A
+000050AD= 49 20 73 75 67 67 ...   1334                        dc.b    'I suggest you make sure you have'
+000050CD= 0D 0A                   1335                        dc.b    $0D,$0A
+000050CF= 65 6E 6F 75 67 68 ...   1336                        dc.b    'enough of everythig or press 4 or 5 to wait out the winter'
+00005109= 0D 0A                   1337                        dc.b    $0D,$0A
+0000510B= 50 72 65 73 73 20 ...   1338                        dc.b    'Press 6 to go to the store'
+00005125= 0D 0A                   1339                        dc.b    $0D,$0A
+00005127= 2A 2A 2A 2A 2A 2A ...   1340                        dc.b    '************************************************************'
+00005163= 0D 0A 00                1341                        dc.b    $0D,$0A,0
+00005166                          1342                        
+00005166= 2A 2A 2A 2A 2A 2A ...   1343   Garth_Castle_msg:   dc.b    '************************************************************'
+000051A2= 0D 0A                   1344                        dc.b    $0D,$0A
+000051A4= 50 72 65 70 61 72 ...   1345                        dc.b    'Preparing to assault Garth Castle. To see how '
+000051D2= 0D 0A                   1346                        dc.b    $0D,$0A
+000051D4= 6D 75 74 63 68 20 ...   1347                        dc.b    'mutch feed you have or to attack press 1. To see how many   '
+00005210= 0D 0A                   1348                        dc.b    $0D,$0A
+00005212= 68 6F 72 73 65 73 ...   1349                        dc.b    'horses you have press 2. Press 3 to see soliders '
+00005243= 0D 0A                   1350                        dc.b    $0D,$0A
+00005245= 61 76 61 69 6C 61 ...   1351                        dc.b    'available for attack.I suggest you make sure you have '
+0000527B= 0D 0A                   1352                        dc.b    $0D,$0A
+0000527D= 65 6E 6F 75 67 68 ...   1353                        dc.b    'enough of everythig or press 4 or 5 to wait out the winter'
+000052B7= 0D 0A                   1354                        dc.b    $0D,$0A
+000052B9= 50 72 65 73 73 20 ...   1355                        dc.b    'Press 6 to go to the store'
+000052D3= 0D 0A                   1356                        dc.b    $0D,$0A
+000052D5= 2A 2A 2A 2A 2A 2A ...   1357                        dc.b    '************************************************************'
+00005311= 0D 0A 00                1358                        dc.b    $0D,$0A,0
+00005314                          1359  
+00005314= 2A 2A 2A 2A 2A 2A ...   1360  intro_msg:    dc.b    '************************************************************'
+00005350= 0D 0A                   1361                dc.b    $0D,$0A
+00005352= 4D 79 20 6C 6F 72 ...   1362                dc.b    'My lord i am your personal assistant. We need our conquest to be successful'
+0000539D= 0D 0A                   1363                dc.b    $0D,$0A
+0000539F= 54 6F 20 64 6F 20 ...   1364                dc.b    'To do this we will need gold, horse feed ,soliders and a number of horses'
+000053E8= 0D 0A                   1365                dc.b    $0D,$0A
+000053EA= 41 74 20 74 68 65 ...   1366                dc.b    'At the moment we have 800 feed , 300 gold , 6 horses and 8 soliders'
+0000542D= 0D 0A                   1367                dc.b    $0D,$0A
+0000542F= 2A 2A 2A 2A 2A 2A ...   1368                dc.b    '************************************************************'
+0000546B= 0D 0A 00                1369                dc.b    $0D,$0A,0                
+0000546E                          1370               
+0000546E= 2A 2A 2A 2A 2A 2A ...   1371  welcome_msg:    dc.b    '************************************************************'
+000054AA= 0D 0A                   1372                  dc.b    $0D,$0A
+000054AC= 57 65 6C 63 6F 6D ...   1373                  dc.b    'Welcome to ZorkQuest  '
+000054C2= 0D 0A                   1374                  dc.b    $0D,$0A
+000054C4= 28 50 72 65 73 73 ...   1375                  dc.b    '(Press enter somtimes to continue'
+000054E5= 0D 0A                   1376                  dc.b    $0D,$0A
+000054E7= 2A 2A 2A 2A 2A 2A ...   1377                  dc.b    '************************************************************'
+00005523= 0D 0A 00                1378                  dc.b    $0D,$0A,0
+00005526                          1379       
+00005526= 2A 2A 2A 2A 2A 2A ...   1380  rate_msg:       dc.b    '************************************************************'
+00005562= 0D 0A                   1381                  dc.b    $0D,$0A
+00005564= 4F 6E 65 20 54 68 ...   1382                  dc.b    'One Third[1], Two Thirds[2], Standard Charge[3], ' 
+00005595= 0D 0A                   1383                  dc.b    $0D,$0A
+00005597= 46 75 6C 6C 20 43 ...   1384                  dc.b    'Full Charge[4], Flank Charge[5] units feed per click'
+000055CB= 2A 2A 2A 2A 2A 2A ...   1385                  dc.b    '************************************************************'
+00005607= 0D 0A 00                1386                  dc.b    $0D,$0A,0 
+0000560A                          1387                  
+0000560A= 2A 2A 2A 2A 2A 2A ...   1388  journey_msg:    dc.b    '************************************************************'
+00005646= 0D 0A                   1389                  dc.b    $0D,$0A
+00005648= 57 65 20 61 72 65 ...   1390                  dc.b    'We are travelling towards Algard castle'
+0000566F= 0D 0A                   1391                  dc.b    $0D,$0A
+00005671= 63 6F 73 74 20 32 ...   1392                  dc.b    'cost 200 feed and gold.'
+00005688= 0D 0A                   1393                  dc.b    $0D,$0A
+0000568A= 2A 2A 2A 2A 2A 2A ...   1394                  dc.b    '************************************************************'
+000056C6= 0D 0A 00                1395                  dc.b    $0D,$0A,0 
+000056C9                          1396  
+000056C9= 44 72 61 77 20 53 ...   1397  draw_msg:       dc.b    'Draw Screen !',0
+000056D7                          1398  
+000056D7                          1399  
+000056D8                          1400  health:     ds.w    1
+000056DA                          1401  score:      ds.w    1 reserve space for score
+000056DC                          1402  
+000056DC                          1403      end start
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+ALGARD_CASTLE_MSG   4FB3
+BADWAIT             34F6
+BADWAIT2            357A
+BATTLE_MSG          4DF2
+BATTLE_MSG2         4ED3
+BUY_FEED            3184
+BUY_FEED_MSG        3B27
+BUY_HORSES          3208
+BUY_HORSES_MSG      3BC8
+BUY_SOLIDERS        31C8
+BUY_SOLIDERS_MSG    3C69
+BUY_STUFF           30EC
+BUY_SUFF_MSG        3DAD
+CLEAR_SCREEN        39A4
+COLLISION           3962
+COLLISION_HIT       396E
+COLLISION_MISS      3976
+CRLF                39EC
+DECORATE            398C
+DRAW                3352
+DRAW_MSG            56C9
+END                 3006
+ENDING_MSG          4A45
+ENDL                39CE
+END_GAME            3916
+ENOUGH_FEED         4328
+ENOUGH_GOLD         4619
+EXIT                0
+FEED                336C
+FEED_AMOUNT         311E
+FEED_AMOUNT_MSG     499B
+FEED_MISSION2       3408
+GAME                3000
+GAMELOOP            3090
+GAMEPLAY            38FE
+GARTH_CASTLE_MSG    5166
+GOODWAIT            34AA
+GOODWAIT2           352E
+GO_TO_MISSION1_PREP  48F9
+HEALTH              56D8
+HIT_POINT           5
+HORSES              35B4
+HORSES_AMOUNT       3162
+HORSES_AMOUNT_MSG   3D0C
+HORSES_MISSION2     35E8
+HUD                 3946
+INFO_FEED           4420
+INFO_GOLD           46EC
+INTRO_MSG           5314
+INVALID             39E4
+INVALID_MSG         3A84
+INVALID_SELECTION   328A
+JOURNEY             36EE
+JOURNEY_MISSION2    3744
+JOURNEY_MSG         560A
+LOOP                397E
+LOW_FEED            3F2F
+LOW_GOLD            4515
+MAX_CHARGE          5
+MAX_HORSES          9
+MINE_LOC            64
+MIN_CHARGE          1
+MIN_FEED            64
+MIN_HORSES          1
+MIN_SOLDIER         6
+MISSION1            3304
+MISSION1_COST_AWARDS  362E
+MISSION1_PREP       3248
+MISSION2            331E
+MISSION2_COST_AWARDS  368E
+MISSION2_PREP       32A6
+MISSION_AWARDS_AND_COST  4119
+MISSION_AWARDS_AND_COST2  4250
+MISS_POINT          8
+NEXT                3982
+NOT_ENOUGH_FEED     33BA
+NOT_ENOUGH_FEED2    3456
+NOT_ENOUGH_GOLD     37E8
+NOT_ENOUGH_GOLD2    389C
+OUT                 3994
+PLENTY_FEED         33D4
+PLENTY_FEED2        3470
+PLENTY_GOLD         380E
+PLENTY_GOLD2        38C2
+RATE                3614
+RATE_MSG            5526
+REPLAY              39B0
+REPLAY_MSG          39EF
+SCORE               56DA
+SHOP_AND_INFO       30BA
+SHOP_MSG            4032
+SOLDIERS            379A
+SOLDIERS_MISSION2   384E
+SOLIDERS_AMOUNT     3140
+SOLIDERS_AMOUNT_MSG  3E8C
+START               1000
+START_MSG           47B9
+UPDATE              3338
+UTINE               308E
+WAIT_OUTCOME_MESSAGE_BAD  4C9E
+WAIT_OUTCOME_MESSAGE_GOOD  4AFF
+WELCOME             300A
+WELCOME_MSG         546E
